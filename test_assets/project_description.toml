@@ -1,0 +1,3 @@
+name        = "Example Project"
+description = "Example project description"
+version     = "1.2.3-SNAPSHOT"

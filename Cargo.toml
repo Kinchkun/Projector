@@ -9,5 +9,5 @@ clap = "2.33.0"
 env_logger = "0.7.1"
 log = "0.4.8"
 toml = "0.5.6"
-serde = "1.0.104"
-snafu = "0.6.2"
+serde = { version = "1.0.104", features = ["derive"]}
+#snafu = "0.6.2"

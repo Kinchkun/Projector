@@ -1,6 +1,6 @@
 mod projector;
 mod file_formats;
-mod types;
+mod error;
 
 fn main() {
     println!("Hello, world!");
