@@ -4,6 +4,7 @@ use toml;
 use std::fs::read_to_string;
 use crate::error::*;
 use crate::error::ProjectorError::CouldNotOpenResourceError;
+use crate::io_support::parse_file;
 
 
 #[derive(Debug, PartialEq, Deserialize)]
@@ -14,12 +15,7 @@ pub struct ProjectDescription {
 }
 
 pub fn load_project_description(path: &Path) -> Result<ProjectDescription> {
-    let content = read_to_string(path)
-        .map_err( |err| ProjectorError::from(err))?;
-    match toml::from_str(content.as_str()) {
-        Ok(result) => Ok(result),
-        Err(error) => Err(ProjectorError::from(error))
-    }
+    parse_file(path)
 }
 
 
