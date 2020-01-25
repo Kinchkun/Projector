@@ -3,7 +3,6 @@ use std::path::{Path};
 use toml;
 use std::fs::read_to_string;
 use crate::error::*;
-use crate::error::ProjectorError::CouldNotOpenResourceError;
 use crate::io_support::parse_file;
 
 

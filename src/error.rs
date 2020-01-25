@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::{fmt, io};
 use serde::export::Formatter;
-use crate::error::ProjectorError::{CouldNotOpenResourceError, InvalidFormatError};
+use std::borrow::BorrowMut;
 
 // TODO Learn proper error handling in rust
 // Alternatives:
@@ -14,45 +14,56 @@ use crate::error::ProjectorError::{CouldNotOpenResourceError, InvalidFormatError
 pub type Result<T, E = ProjectorError> = std::result::Result<T, E>;
 
 #[derive(Debug)]
-pub enum ProjectorError {
-    CouldNotOpenResourceError { what: &'static str },
-    InvalidFormatError        { },
-    OtherError                { }
+pub struct ProjectorError {
+    what: Option<&'static str>,
+    item: Option<String>,
+    kind: Kind
 }
 
-pub struct ErrCtx {
-    pub what: &'static str
+#[derive(Debug)]
+pub enum Kind {
+    IoError     {cause: io::Error},
+    FormatError {cause: Box<dyn Error>},
+    Other
 }
 
-pub trait ResultExt<T> : Sized  {
-    fn err_context(self, ctx: &ErrCtx) -> Result<T, ProjectorError>;
-}
-
-impl<T>  ResultExt<T> for Result<T, io::Error> {
-    fn err_context(self, ctx: &ErrCtx) -> Result<T, ProjectorError> {
-        self.map_err( |err | CouldNotOpenResourceError { what: ctx.what} )
+impl ProjectorError {
+    fn set_what(self, what: &'static str) -> ProjectorError {
+        ProjectorError {
+            what: Some(what),
+            ..self
+        }
     }
 }
 
-impl<T>  ResultExt<T> for Result<T, toml::de::Error> {
-    fn err_context(self, ctx: &ErrCtx) -> Result<T, ProjectorError> {
-        self.map_err( |err | InvalidFormatError {} )
-    }
+
+pub trait ResultExtProject<T> : Sized {
+    fn what(self, what: &'static str) -> Result<T>;
 }
 
+impl<T> ResultExtProject<T> for Result<T> {
+    fn what(self, what: &'static str) -> Result<T, ProjectorError> {
+        return self.map_err(| err | err.set_what(what))
+    }
+}
 
 impl Error for ProjectorError {}
 
 impl fmt::Display for ProjectorError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match *self {
-            ProjectorError::InvalidFormatError {} =>
-                write!(f, "Invalid format (TODO)"),
-            ProjectorError::CouldNotOpenResourceError {..} =>
-                write!(f, "The file could not be opened"),
-            _ =>
-                write!(f, "unkown error")
-        }
+        unimplemented!()
     }
 }
 
+
+impl From<std::io::Error> for ProjectorError {
+    fn from(cause: std::io::Error) -> Self {
+        unimplemented!()
+    }
+}
+
+impl From<toml::de::Error> for ProjectorError {
+    fn from(cause: toml::de::Error) -> Self {
+        unimplemented!()
+    }
+}
