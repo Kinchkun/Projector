@@ -2,30 +2,27 @@ use std::error::Error;
 use std::{fmt, io};
 use serde::export::Formatter;
 use std::borrow::BorrowMut;
-
-// TODO Learn proper error handling in rust
-// Alternatives:
-//   - one error type with kind, message, additional information
-//   - several specialised error types
-//   - libraries
-//     - snafu: looks good, doesn't work with clion
-//     - failure: good for apps, but for libs?
+use std::intrinsics::write_bytes;
+use clap::Format;
 
 pub type Result<T, E = ProjectorError> = std::result::Result<T, E>;
 
-#[derive(Debug)]
+#[derive()]
 pub struct ProjectorError {
+    message: Option<String>,
     what: Option<&'static str>,
     item: Option<String>,
-    kind: Kind
+    cause: Option<Box<dyn Error>>,
+    kind: ErrorKind,
 }
 
 #[derive(Debug)]
-pub enum Kind {
-    IoError     {cause: io::Error},
-    FormatError {cause: Box<dyn Error>},
+pub enum ErrorKind {
+    IoError,
+    FormatError,
     Other
 }
+
 
 impl ProjectorError {
     fn set_what(self, what: &'static str) -> ProjectorError {
@@ -47,11 +44,38 @@ impl<T> ResultExtProject<T> for Result<T> {
     }
 }
 
-impl Error for ProjectorError {}
+impl ProjectorError {
+    fn format(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self.kind {
+            ErrorKind::IoError => write!(f, "An io error occurred"),
+            ErrorKind::FormatError => {
+                write!(f, "An format error occurred")?;
+                self.format_cause(f)
+            },
+            ErrorKind::Other => write!(f, "An unknown at compile time error occurred"),
+        }
+    }
+
+    fn format_cause(&self, f: &mut Formatter) -> fmt::Result {
+        if let Some(cause) = &self.cause {
+            write!(f, "\n Caused by: ")?;
+            return std::fmt::Display::fmt(&cause, f)
+        }
+        Ok(())
+    }
+}
+
+impl Error for ProjectorError { }
 
 impl fmt::Display for ProjectorError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        unimplemented!()
+        self.format(f)
+    }
+}
+
+impl fmt::Debug for ProjectorError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        self.format(f)
     }
 }
 
@@ -64,6 +88,12 @@ impl From<std::io::Error> for ProjectorError {
 
 impl From<toml::de::Error> for ProjectorError {
     fn from(cause: toml::de::Error) -> Self {
-        unimplemented!()
+        ProjectorError {
+            message: Some(String::from("asdf")),
+            what: None,
+            item: None,
+            cause: Some(Box::new(cause)),
+            kind: ErrorKind::FormatError
+        }
     }
 }

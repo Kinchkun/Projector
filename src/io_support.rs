@@ -16,4 +16,3 @@ pub fn parse_file<T : DeserializeOwned>(path: &Path) -> Result<T> {
         Err(err) => Err(err.into())
     }
 }
-
